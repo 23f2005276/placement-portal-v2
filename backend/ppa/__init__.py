@@ -1,11 +1,13 @@
 from dotenv import load_dotenv
 import os
 from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
-from flask_restful import Api
-from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from sqlalchemy.orm import DeclarativeBase
+from ppa.extensions import db, bcrypt_instance
+
+# models and routes
+from ppa import models  # noqa: E402, F401
+from ppa.routes import api_bp # noqa: E402, F401
 load_dotenv()
 
 app = Flask(__name__)
@@ -23,14 +25,7 @@ jwt_manager_instance = JWTManager(app)
 class Base(DeclarativeBase):
     pass
 
-db = SQLAlchemy(app, model_class=Base)
+db.init_app(app)
+bcrypt_instance.init_app(app)
 
-api = Api(app)
-
-bcrypt_instance = Bcrypt(app)
-
-# importing routes and models
-
-from ppa import models  # noqa: E402, F401
-
-# adding api resources below this
+app.register_blueprint(api_bp, url_prefix="/api")
