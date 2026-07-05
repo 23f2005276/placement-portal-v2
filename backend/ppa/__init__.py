@@ -1,12 +1,12 @@
 from dotenv import load_dotenv
 import os
-load_dotenv()
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Api
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager
 from sqlalchemy.orm import DeclarativeBase
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -31,6 +31,6 @@ bcrypt_instance = Bcrypt(app)
 
 # importing routes and models
 
-from ppa import models
+from ppa import models  # noqa: E402, F401
 
 # adding api resources below this

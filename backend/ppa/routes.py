@@ -1,7 +1,8 @@
+import time
 from datetime import timedelta
 from ppa import db, bcrypt_instance
 from ppa.models import PPAUsers, Company, IndustryTypes, Students, Branches
-from flask import jsonify, request
+from flask import jsonify
 from flask_restful import Resource, reqparse
 from flask_jwt_extended import create_access_token
 
@@ -130,9 +131,10 @@ class SignupResource(Resource):
 
         role_claims = {"role": "student"}
         expires_delta=timedelta(minutes=10)
-        access_token = create_access_token(identity=student_user.id, additional_claims=role_claims ,expires_delta=expires_delta)
+        access_token = create_access_token(identity=str(student_user.id), additional_claims=role_claims ,expires_delta=expires_delta)
         return jsonify({"message": "Student user created successfully", "access_token":access_token}), 201
 
+# /api/login
 class LoginResource(Resource):
     def post():
         req_parser = reqparse.RequestParser()
@@ -143,3 +145,30 @@ class LoginResource(Resource):
         req_fields = req_parser.parse_args()
 
         user = PPAUsers.query.filter_by(email=req_fields["email"]).first()
+
+        start_time = time.time()
+
+        MIN_TIME_SLEEP = 0.200
+
+        if user and bcrypt_instance.check_password_hash(user.password, req_fields["password"]):
+            role_claims = {"role": user.role}
+            expires_delta=timedelta(minutes=10)
+            access_token = create_access_token(identity=user.id, additional_claims=role_claims, expires_delta=expires_delta)
+            return jsonify(
+                {
+                    "message": "User authenticated successfully",
+                    "access_token": access_token
+                }
+            ), 200
+        
+        auth_end_time = time.time()
+        time_delta = auth_end_time - start_time
+        if time_delta < MIN_TIME_SLEEP:
+            time.sleep(MIN_TIME_SLEEP - time_delta)
+        
+        return jsonify(
+            {
+                "message": "email and password combination incorrect"
+            }
+        ), 401
+class 
