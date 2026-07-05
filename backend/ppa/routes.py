@@ -171,4 +171,3 @@ class LoginResource(Resource):
                 "message": "email and password combination incorrect"
             }
         ), 401
-class 
