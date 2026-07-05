@@ -46,7 +46,7 @@ class Skills(db.Model):
 class Students(db.Model):
     __tablename__ = "students"
     id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("ppa_users.id"), primary_key=True)
-    student_rollno: Mapped[str] = mapped_column(db.String(50), nullable=False, unique=True)
+    student_roll_no: Mapped[str] = mapped_column(db.String(50), nullable=False, unique=True)
     branch_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("branches.id") ,nullable=False)
     year_of_study: Mapped[int] = mapped_column(db.Integer, nullable=False)
     current_cgpa: Mapped[float] = mapped_column(db.Numeric(4, 2), nullable=False)
