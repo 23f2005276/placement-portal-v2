@@ -1,6 +1,6 @@
 import time
 from datetime import timedelta
-from ppa import db, bcrypt_instance
+from ppa.extensions import db, bcrypt_instance
 from ppa.models import PPAUsers, Company, IndustryTypes, Students, Branches
 from flask import jsonify
 from flask_restful import Resource, reqparse

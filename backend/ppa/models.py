@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from ppa import db
+from ppa.extensions import db
 from enum import Enum
 from datetime import datetime
 
