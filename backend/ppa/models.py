@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from ppa.extensions import db
-from enum import Enum
+from enum import StrEnum
 from datetime import datetime
 
 '''
@@ -8,7 +8,11 @@ mapped_column me either we pass primary_key, String/Integer ki limit, nullable, 
 relationships
 '''
 
-class PPAUsersRole(Enum):
+'''
+Enums are helpful to only allow certain values to get stored in the db, so as to avoid unnecessary bugs and errors afterwards, StrEnum helps to just simply allow lookup with the string value instead of the key value
+'''
+
+class PPAUsersRole(StrEnum):
     ADMIN_ROLE = "admin"
     STUDENT_ROLE = "student"
     COMPANY_HR_ROLE = "company_hr"
@@ -21,7 +25,7 @@ class PPAUsers(db.Model):
     password_hash: Mapped[str] = mapped_column(db.String(255), nullable=False)
     role: Mapped[PPAUsersRole] = mapped_column(db.Enum(PPAUsersRole), nullable=False, default=PPAUsersRole.STUDENT_ROLE)
 
-class UserStatus(Enum):
+class UserStatus(StrEnum):
     APPROVED_ROLE = "approved"
     BLACKLISTED_ROLE = "blacklisted"
     PENDING_ROLE = "pending"
@@ -50,8 +54,8 @@ class Students(db.Model):
     branch_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("branches.id") ,nullable=False)
     year_of_study: Mapped[int] = mapped_column(db.Integer, nullable=False)
     current_cgpa: Mapped[float] = mapped_column(db.Numeric(4, 2), nullable=False)
-    resume_file_url: Mapped[str] = mapped_column(db.String(500))
-    status: Mapped[UserStatus] = mapped_column(db.Enum(UserStatus), nullable=False, default=UserStatus.PENDING_ROLE)
+    resume_file_url: Mapped[str] = mapped_column(db.String(500), nullable=True)
+    status: Mapped[UserStatus] = mapped_column(db.Enum(UserStatus), nullable=False, default=UserStatus.APPROVED_ROLE)
     branch_name: Mapped["Branches"] = relationship(back_populates="students")
     skills: Mapped[list["StudentSkills"]] = relationship()
     drives_applied: Mapped[list["StudentApplications"]] = relationship() 
@@ -87,7 +91,7 @@ class Company(db.Model):
     status: Mapped[UserStatus] = mapped_column(db.Enum(UserStatus), nullable=False, default=UserStatus.PENDING_ROLE)
     placement_drives: Mapped[list["PlacementDrives"]] = relationship()
 
-class PlacementStatus(Enum):
+class PlacementStatus(StrEnum):
     APPROVED_STATUS = "approved"
     PENDING_STATUS = "pending"
     CLOSED_STATUS = "closed"
@@ -126,7 +130,7 @@ class EligibleBranches(db.Model):
     placement_drive_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("placement_drives.id"), nullable=False)
     branch_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("branches.id"), nullable=False)
 
-class StudentApplicationStatus(Enum):
+class StudentApplicationStatus(StrEnum):
     PENDING_STATUS = "pending"
     SHORTLISTED_STATUS = "shortlisted"
     SELECTED_STATUS = "selected"
@@ -138,3 +142,18 @@ class StudentApplications(db.Model):
     student_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("students.id"), nullable=False)
     placement_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("placement_drives.id"), nullable=False)
     status: Mapped[StudentApplicationStatus] = mapped_column(db.Enum(StudentApplicationStatus), nullable=False, default=StudentApplicationStatus.PENDING_STATUS)
+
+class StudentPlacementState(StrEnum):
+    UNPLACED_STATUS = "unplaced"
+    PLACED_STATUS = "placed"
+
+class StudentPlacementStatus(db.Model):
+    __tablename__ = "student_placement_status"
+    student_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("students.id"), primary_key=True)
+    placement_status: Mapped[StudentPlacementState] = mapped_column(db.Enum(StudentPlacementState), nullable=False, default=StudentPlacementState.UNPLACED_STATUS)
+
+class CompanyPlacementData(db.Model):
+    __tablename__ = "company_placement_data"
+    company_id: Mapped[int] = mapped_column(db.Integer, db.ForeignKey("company.id"), primary_key=True)
+    students_hired: Mapped[int] = mapped_column(db.Integer, nullable=False, default=0)
+    average_package: Mapped[float] = mapped_column(db.Numeric(5,2), nullable=False, default=0.00)
