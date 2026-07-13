@@ -64,3 +64,41 @@ const handleSubmit = (event) => {
 - instead of storing tokens in the localStorage we can store the tokens in the cookies, and cookies are never sent to other websites (SOP of browser protects us), in cookies we can put that only send cookies to the HTTPS protected routes, only send the cookies originating from the same site, and we can specify that the cookies should only be used for sending to HTTP requests and cookies won't be accessible through javascript
 - browser is strict and it ensures ki cross origin backend frontend ko kuch bhi naa de aur cross origin frontend backend ko kuch bhi naa de, therefore backend se aaya hua cookie ko browser frontend me store nahi karwaayega unless while fetching the details the browser is allowing the credentials: true flag in the request headers or something like that, this request header of credentials: "include" is for both accepting the cookies sent by the backend and for sending the cookies to the backend
 - and the access-control-allow-credentials header in the response decides whether the browser will allow the frontend to send the cookies or not, since that credentials: "include" is getting used for both the inclusion of cookies and acceptance of cookies, therefore the backend too has to allow the frontend to send the cookies or else browser will block it
+
+### Inject/project mechanism in Vue
+
+Spot on. You have hit the nail right on the head.
+
+To look up a resource in a tree, you absolute must have a **starting point**. If Vue doesn’t know *which* component is asking, it has no idea where to start climbing up the tree to find the provider.
+
+To cement this mental model, let's look at the exact mechanism and the one small catch that trips developers up.
+
+---
+
+1. The Tree Lookup Mechanism
+
+Think of Vue's component tree like a skyscraper, and the context provider is a cafeteria on the 5th floor.
+
+If a component on the 8th floor calls `useRouter()`, Vue needs to know: *"I am currently standing on the 8th floor."* With that starting location, Vue can look at the 8th floor, then the 7th, then the 6th, and finally find the router context on the 5th floor.
+
+If you call `useRouter()` at the top level of a file (outside the component) or after the setup phase has cleared, it's like asking: *"Where is the nearest cafeteria?"* without telling the GPS where you are currently standing. The system doesn't know if you're on the 8th floor, the 2nd floor, or out in the parking lot, so it returns `undefined`.
+
+---
+
+2. The One Nuance: "Active" vs. "Executing"
+
+The only minor adjustment to your summary is defining exactly what **"active"** means to Vue.
+
+A component can be active in two different ways:
+
+1. **Alive on the screen:** The component is mounted, visible, and the user is interacting with it.
+2. **Actively executing its setup code:** The precise moment Vue is running the code inside your `<script setup>`.
+
+Vue *only* sets the internal global pointer—the tracking system that notes your "current floor"—during **#2 (the synchronous setup phase)**.
+
+Once that initial script execution finish line is crossed, Vue clears the pointer to get ready for the next component. So even though a component is still perfectly "active" on the screen during `onMounted` or during a button click, the synchronous window for identifying *where* it sits in the tree has already closed.
+
+# Vue
+
+- script only runs once, no matter whether a normal variable changes or whether the state variable changes, only the computed functions re-trigger for state changes, like where the state variables are passed in the computed properties functions, there only the computed re-runs but not functional logic of the code 
+- and the elements in the template which depend on some state variable are re-painted if the state variable changes inside the template

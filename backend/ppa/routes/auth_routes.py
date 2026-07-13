@@ -13,20 +13,24 @@ class SignupResource(Resource):
         req_fields = parser.parse_args()
 
         if req_fields.get("category") == "student":
-            branches_list = Branches.query.all()    
+            branches_list = db.session.scalars(db.select(Branches)).all()    
             branch_dict = dict({
                 "content": [getattr(branch, "branch_name") for branch in branches_list]
             })
             return {"message": "fetched branches successfully", "branches_list": branch_dict}, 200 
 
         if req_fields.get("category") == "company_hr":
-            industry_list = IndustryTypes.query.all()
+            industry_list = db.session.scalars(db.select(IndustryTypes)).all()
             industry_dict = dict(
                 {
                     "content": [getattr(industry, "industry_name") for industry in industry_list]
                 }
             )
             return {"message": "fetched industries successfully", "industry_list": industry_dict}, 200 
+        
+        return {
+            "message": "You are not allowed to access that"
+        }, 403
     
     def post(self):
         parser = reqparse.RequestParser()
@@ -58,10 +62,10 @@ class SignupResource(Resource):
 
         req_fields = parser.parse_args()
 
-        if req_fields["role"] == "admin":
+        if (req_fields.get("role") in ["admin"]) or (req_fields.get("role") not in ["company_hr", "student"]) :
             return {"message":"You are not allowed to do that"}, 403
 
-        existing_user = PPAUsers.query.filter_by(email=req_fields.get("email")).first()
+        existing_user = db.session.scalars(db.select(PPAUsers).filter_by(email=req_fields.get("email"))).first()
         if existing_user:
             return {
                 "message": "User already exists!"
@@ -99,12 +103,13 @@ class SignupResource(Resource):
             db.session.add(company_hr)
             db.session.flush()
 
-            company_industry_id = getattr(
-                IndustryTypes.query.filter_by(
-                    industry_name=req_fields.get("company_industry")
-                ).first(),
-                "id"
-            )
+            company_industry_id = db.session.scalars(db.select(IndustryTypes.id).filter_by(industry_name=req_fields.get("company_industry"))).first()
+
+            if not company_industry_id:
+                return {
+                    "message": "Company Industry Not Found"
+                }, 400 
+
             company_tuple = Company(
                 company_hr_id=getattr(company_hr, "id"),
                 company_name=req_fields.get("company_name"),
@@ -152,7 +157,7 @@ class SignupResource(Resource):
                 "message": "Required fields are missing for Student role"
             }, 400
 
-        existing_roll_no = Students.query.filter_by(student_roll_no=req_fields.get("student_roll_no")).first()
+        existing_roll_no = db.session.scalars(db.select(Students.student_roll_no).filter_by(student_roll_no=req_fields.get("student_roll_no"))).first()
 
         if existing_roll_no:
             return {
@@ -172,7 +177,13 @@ class SignupResource(Resource):
         db.session.add(student_user)
         db.session.flush()
 
-        branch_id = getattr(Branches.query.filter_by(branch_name=req_fields.get("branch")).first(), "id")
+        branch_id = db.session.scalars(db.select(Branches.id).filter_by(branch_name=req_fields.get("branch"))).first()
+
+        if not branch_id:
+            return {
+                "message": "Invalid Branch"
+            }, 400
+
         student_tuple = Students(id=getattr(student_user, "id"), student_roll_no=req_fields.get("student_roll_no"), branch_id=branch_id, year_of_study=req_fields.get("year_of_study"), current_cgpa=req_fields.get("current_cgpa"))
         db.session.add(student_tuple)
 
@@ -209,7 +220,7 @@ class LoginResource(Resource):
 
         req_fields = req_parser.parse_args()
 
-        user = PPAUsers.query.filter_by(email=req_fields.get("email")).first()
+        user = db.session.scalars(db.select(PPAUsers).filter_by(email=req_fields.get("email"))).first()
 
         if user and bcrypt_instance.check_password_hash(getattr(user, "password_hash"), req_fields.get("password")):
             role_claims = {"role": getattr(user, "role")}

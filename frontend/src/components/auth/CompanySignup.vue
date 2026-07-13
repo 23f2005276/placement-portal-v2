@@ -190,7 +190,7 @@ onMounted(async () => {
             <textarea
               name="company_description"
               class="form-control border-2 w-100"
-              id="company_description"
+              id="companyDescription"
               aria-describedby="companyDescriptionHelp"
             >
             </textarea>

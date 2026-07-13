@@ -3,6 +3,7 @@ import StudentSignup from "../components/auth/StudentSignup.vue";
 import CompanySignup from "../components/auth/CompanySignup.vue";
 import { useRouter } from "vue-router";
 import { onMounted } from "vue";
+import { useCheckIdentity } from "@/hooks/useCheckIdentity.js";
 
 const apiUrl = import.meta.env.VITE_API_BASE_URL;
 
@@ -12,26 +13,19 @@ const props = defineProps({
   },
 });
 
-const router = useRouter()
+const router = useRouter();
 
 const redirectUser = (event) => {
-  const role = String(event.target.name)
+  const role = String(event.target.name);
 
-  router.push(`/signup/${role}`)
+  router.push(`/signup/${role}`);
 };
 
-onMounted(() => {
-  fetch(`${apiUrl}/api/identity`, {
-    method: "GET",
-    credentials: "include",
-  }).then(async (response) => {
-    const jsonResponse = await response.json();
-    if (response.ok) {
-      router.push(`/${jsonResponse.role}`);
-    }
-  });
-});
+const checkIdentity = useCheckIdentity()
 
+onMounted(() => {
+  checkIdentity()
+})
 </script>
 
 <template>
@@ -45,8 +39,20 @@ onMounted(() => {
       <div
         class="bg-secondary-subtle h-50 w-50 text-black font-segoe d-flex justify-content-around align-items-center"
       >
-        <button name="student" class="btn btn-primary w-25 h-50" @click="redirectUser" >Signup as a Student</button>
-        <button name="company_hr" class="btn btn-primary w-25 h-50" @click="redirectUser" >Signup as a Company</button>
+        <button
+          name="student"
+          class="btn btn-primary w-25 h-50"
+          @click="redirectUser"
+        >
+          Signup as a Student
+        </button>
+        <button
+          name="company_hr"
+          class="btn btn-primary w-25 h-50"
+          @click="redirectUser"
+        >
+          Signup as a Company
+        </button>
       </div>
     </div>
   </div>

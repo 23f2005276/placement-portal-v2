@@ -3,6 +3,7 @@ import authBg from "@/assets/pngs/auth/authBg.png";
 import { onMounted, ref, resolveDynamicComponent } from "vue";
 import { useRouter } from "vue-router";
 import { errorMessages } from "vue/compiler-sfc";
+import { useCheckIdentity } from "@/hooks/useCheckIdentity.js";
 
 const apiUrl = import.meta.env.VITE_API_BASE_URL;
 const router = useRouter();
@@ -38,16 +39,10 @@ const loginUser = (event) => {
   });
 };
 
+const checkIdentity = useCheckIdentity()
+
 onMounted(() => {
-  fetch(`${apiUrl}/api/identity`, {
-    method: "GET",
-    credentials: "include",
-  }).then(async (response) => {
-    const jsonResponse = await response.json();
-    if (response.ok) {
-      router.push(`/${jsonResponse.role}`);
-    }
-  });
+  checkIdentity()
 });
 </script>
 

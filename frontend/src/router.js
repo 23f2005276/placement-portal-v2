@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router";
 import Signup from "./pages/Signup.vue";
 import Login from "./pages/Login.vue";
 import Error from "./pages/Error.vue";
+import Admin from "./pages/Admin.vue";
 
 const routes = [
   {
@@ -21,6 +22,11 @@ const routes = [
     path: "/Error/:status?/:message?",
     component: Error,
     props: true 
+  },
+  {
+    path: "/admin/:page?",
+    component: Admin,
+    props: true
   }
 ];
 

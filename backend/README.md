@@ -124,3 +124,49 @@ If `evil.com` tries to trigger a request to `bank.com/api/transfer-money`:
 ### flask jwt extended
 
 - tell this package to explicity look for jwts in the cookies or headers, depends on us
+- `verify_jwt_in_request()` and the `@jwt_required()` decorator check for CSRF tokens when dealing with state-changing (unsafe) HTTP methods (like `POST`, `PUT`, `PATCH`, `DELETE`) if cookie-based token location is active.
+### decorators
+- decorators me the executions happens from top to bottom which means that the function below will wrap the main function and that outputted function will be decorated from the outermost decorator 
+
+```
+outerDecorator(innerDecorator(fn)), outerDecorator takes the innerDecorator function which is outputting the decorated function that it took inside
+```
+
+### JSON Serialization of Database Models (SQLAlchemy Rows)
+- Standard Python types (strings, numbers, list, dict, booleans, `None`) are natively serialized to JSON by Flask and Python's built-in encoder.
+- Database rows/objects returned by SQLAlchemy (e.g., `PPAUsers` model instances) are custom Python class objects and cannot be automatically serialized. Attempting to return them directly from an API endpoint will result in `TypeError: Object of type ModelName is not JSON serializable`.
+- To avoid crashes, always serialize database models to standard Python dictionaries first before returning them to the client. This also gives you control over excluding sensitive fields (such as `password_hash`).
+
+### Modern SQLAlchemy 2.0 / Flask-SQLAlchemy 3.x Query Syntax
+- Instead of using the legacy `Model.query` pattern, use the modern execution-based query syntax.
+- **Selecting all rows:**
+  ```python
+  users = db.session.scalars(db.select(PPAUsers)).all()
+  ```
+- **Filtering by key-value pairs (shortcut):**
+  ```python
+  user = db.session.scalars(db.select(PPAUsers).filter_by(email=email_val)).first()
+  ```
+- **Chaining logic using `db.or_` and `db.and_`:**
+  To combine multiple filters:
+  ```python
+  # Fetch active users who are either admins OR superusers
+  stmt = (
+      db.select(User)
+      .where(
+          User.is_active == True,  # Implicitly ANDed with the OR block below
+          db.or_(
+              User.role == 'admin',
+              User.role == 'superuser'
+          )
+      )
+  )
+
+  users = db.session.execute(stmt).scalars().all()
+  ```
+
+- **Difference between `scalar()` (singular) and `scalars()` (plural):**
+  - `db.session.scalar(...)` directly executes the query and returns the single value/model instance itself (or `None`). **Do not call `.first()` or `.all()` on `.scalar()`**, as it will raise an `AttributeError: 'ModelName' object has no attribute 'first'`.
+  - `db.session.scalars(...)` returns a results wrapper (`ScalarResult`). You **must** call `.first()` or `.all()` on `.scalars()` to extract the actual database records.
+- **Role-based status updates (polymorphism):**
+  When updating user statuses (like approving or blacklisting accounts), remember that user profiles are split across tables depending on their role. Ensure you check the user's role (e.g., `company_hr` vs. `student`) and update the respective child model status (`Company.status` or `Students.status`), rather than just returning a success message without database changes.

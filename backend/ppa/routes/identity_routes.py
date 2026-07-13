@@ -6,7 +6,7 @@ class IdentityResource(Resource):
     def get(self):
         jwt = get_jwt()
 
-        role = jwt.get("role")
+        role = str(jwt.get("role"))
 
         return {
             "message": "User Identified successfully",
