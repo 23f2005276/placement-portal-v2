@@ -28,11 +28,11 @@ const loginUser = (event) => {
       router.push(`/${jsonResponse.role}`);
     } else {
       if (typeof jsonResponse.message == "string") {
-        router.push(`Error/${response.status}/${jsonResponse.message}`);
+        router.push(`/Error/${response.status}/${jsonResponse.message}`);
       }
       if (typeof jsonResponse.message == "object") {
         const errorMessage = String(Object.values(jsonResponse.message)[0]);
-        router.push(`Error/${response.status}/${errorMessage}`);
+        router.push(`/Error/${response.status}/${errorMessage}`);
       }
     }
   });

@@ -33,11 +33,11 @@ const signUpForm = async (event) => {
       router.push("/student");
     } else {
       if (typeof jsonResponse.message == "string") {
-        router.push(`Error/${response.status}/${jsonResponse.message}`);
+        router.push(`/Error/${response.status}/${jsonResponse.message}`);
       }
       if (typeof jsonResponse.message == "object") {
         const errorMessage = String(Object.values(jsonResponse.message)[0]);
-        router.push(`Error/${response.status}/${errorMessage}`);
+        router.push(`/Error/${response.status}/${errorMessage}`);
       }
     }
   });
@@ -47,17 +47,16 @@ const branchesArray = ref([]);
 
 onMounted(async () => {
 
-  const jsonData = await fetch(`${apiUrl}/api/signup?category=student`);
-  const dataObj = await jsonData.json();
+  const data = await fetch(`${apiUrl}/api/signup?category=student`);
+  const jsonData = await data.json();
 
-  branchesArray.value = dataObj["branches_list"]["content"];
-  console.log(branchesArray);
+  branchesArray.value = jsonData["branches_list"]["content"];
 });
 </script>
 
 <template>
   <div
-    class="w-100 h-100 py-3 bg-secondary-subtle text-end"
+    class="w-100 h-100 py-2 bg-secondary-subtle text-end"
     style="padding-left: 30%; padding-right: 30%"
   >
     <div
@@ -137,7 +136,7 @@ onMounted(async () => {
               type="password"
               class="form-control border-2 w-100"
               id="password"
-              aria-describedby="confirmStudentRollNumberHelp"
+              aria-describedby="passwordHelp"
             />
           </div>
         </div>
