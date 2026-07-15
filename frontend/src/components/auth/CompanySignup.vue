@@ -31,6 +31,7 @@ const signUpForm = (event) => {
   }).then(async (response) => {
     const jsonResponse = await response.json();
     if (response.ok) {
+      localStorage.setItem("user_id", jsonResponse.user_id);
       router.push(`/company_hr`)
     } else {
       if (typeof jsonResponse.message == "string") {

@@ -8,16 +8,27 @@ export const useCheckIdentity = () => {
   const route = useRoute()
 
   const checkIdentity = () => {
+    if (route.path === "/pending" || route.path === "/blacklisted") {
+      return;
+    }
     fetch(`${apiUrl}/api/identity`, {
       method: "GET",
       credentials: "include",
     }).then(async (response) => {
       const jsonResponse = await response.json();
       if (response.ok) {
-        router.push(`/${jsonResponse.role}`);
+        localStorage.setItem("user_id", jsonResponse.user_id);
+        if (!route.path.startsWith(`/${jsonResponse.role}`)) {
+          router.push(`/${jsonResponse.role}`);
+        }
       } else {
-        if (!(route.path.startsWith("/signup"))) {
-          router.push("/"); 
+        if (response.status === 403 && (jsonResponse.message === "pending" || jsonResponse.message === "blacklisted")) {
+          router.push(`/${jsonResponse.message}`);
+        } else {
+          if (!(route.path.startsWith("/signup"))) {
+            localStorage.removeItem("user_id");
+            router.push("/"); 
+          }
         }
       }
     });

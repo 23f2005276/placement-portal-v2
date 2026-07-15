@@ -170,3 +170,19 @@ outerDecorator(innerDecorator(fn)), outerDecorator takes the innerDecorator func
   - `db.session.scalars(...)` returns a results wrapper (`ScalarResult`). You **must** call `.first()` or `.all()` on `.scalars()` to extract the actual database records.
 - **Role-based status updates (polymorphism):**
   When updating user statuses (like approving or blacklisting accounts), remember that user profiles are split across tables depending on their role. Ensure you check the user's role (e.g., `company_hr` vs. `student`) and update the respective child model status (`Company.status` or `Students.status`), rather than just returning a success message without database changes.
+- **StrEnum vs Raw String Literals in SQLAlchemy:**
+  - Python's `StrEnum` (introduced in Python 3.11) allows enum members to behave exactly like strings. Therefore, checking a database column against a raw string literal (e.g. `Company.status == "pending"`) works perfectly under the hood.
+  - While using raw strings is convenient for maintaining consistency with existing code, using the Enum class (`UserStatus.PENDING_ROLE`) is generally a software engineering best practice because it:
+    1. **Prevents Typos:** Misspelling `"pending"` as `"pendng"` won't show any error until runtime, whereas misspelling `UserStatus.PENDNG_ROLE` raises a compile-time/linter error immediately.
+    2. **Single Source of Truth:** If the string representation changes (e.g., from `"pending"` to `"awaiting_approval"`), you only need to change it in one place (the Enum definition) rather than searching/replacing throughout the entire codebase.
+    3. **Improves Readability:** It documents what set of constraints apply to a database column.
+- **Clearing Cookies on Logout:**
+  There are two main methods to clear cookies from a browser upon user logout:
+  1. **HTTP `Clear-Site-Data: "cookies"` Header:**
+     - A modern HTTP header that instructs the browser to wipe out all cookies associated with the website's origin.
+     - **Pros:** Extremely clean and wipes out all cookies at once.
+     - **Cons:** Not supported by older legacy browsers or non-browser clients. It can also be ignored by browsers during local testing on non-secure origins (HTTP without SSL or custom ports on localhost).
+  2. **Expiring cookies explicitly using `expires=0`:**
+     - Setting a target cookie's expiration date in the past (Epoch time: Jan 1, 1970).
+     - **Pros:** Natively supported by 100% of all web browsers and HTTP clients.
+     - **Cons:** Requires explicit deletion calls for each individual cookie that you want to clear.

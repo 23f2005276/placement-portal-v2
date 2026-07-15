@@ -2,7 +2,7 @@ from datetime import timedelta
 from ppa.extensions import db, bcrypt_instance
 from ppa.models import PPAUsers, Company, IndustryTypes, Students, Branches, StudentPlacementStatus, CompanyPlacementData
 from flask_restful import Resource, reqparse
-from flask_jwt_extended import create_access_token
+from flask_jwt_extended import create_access_token, jwt_required
 from flask import jsonify, make_response
 
 # /api/signup?category=student/company_hr>
@@ -125,11 +125,12 @@ class SignupResource(Resource):
             db.session.commit()
 
             role_claims = {"role": "company_hr"}
-            expires_delta = timedelta(minutes=10)
+            expires_delta = timedelta(minutes=90)
             access_token = create_access_token(identity=str(getattr(company_hr, "id")), additional_claims=role_claims, expires_delta=expires_delta)
 
             payload = {
-                "message": "Created company and hr user successfully"
+                "message": "Created company and hr user successfully",
+                "user_id": str(getattr(company_hr, "id"))
             }
 
             response = make_response(jsonify(payload), 201)
@@ -193,11 +194,12 @@ class SignupResource(Resource):
         db.session.commit()
 
         role_claims = {"role": "student"}
-        expires_delta=timedelta(minutes=10)
+        expires_delta=timedelta(minutes=90)
         access_token = create_access_token(identity=str(getattr(student_user, "id")), additional_claims=role_claims ,expires_delta=expires_delta)
 
         response = make_response(jsonify({
-            "message": "Student user created successfully"
+            "message": "Student user created successfully",
+            "user_id": str(getattr(student_user, "id"))
         }), 201)
 
         response.set_cookie(
@@ -223,13 +225,26 @@ class LoginResource(Resource):
         user = db.session.scalars(db.select(PPAUsers).filter_by(email=req_fields.get("email"))).first()
 
         if user and bcrypt_instance.check_password_hash(getattr(user, "password_hash"), req_fields.get("password")):
-            role_claims = {"role": getattr(user, "role")}
-            expires_delta=timedelta(minutes=10)
+            role = str(getattr(user, "role"))
+
+            if role != "admin":
+                if role == "student":
+                    student = db.session.scalar(db.select(Students).where(Students.id == getattr(user, "id")))
+                    if student and student.status in ["pending", "blacklisted"]:
+                        return {"message": student.status}, 403
+                elif role == "company_hr":
+                    company = db.session.scalar(db.select(Company).where(Company.company_hr_id == getattr(user, "id")))
+                    if company and company.status in ["pending", "blacklisted"]:
+                        return {"message": company.status}, 403
+
+            role_claims = {"role": role}
+            expires_delta=timedelta(minutes=90)
             access_token = create_access_token(identity=str(getattr(user, "id")), additional_claims=role_claims, expires_delta=expires_delta)
 
             response = make_response(jsonify({
                 "message": "User authenticated successfully",
-                "role": str(getattr(user, "role"))
+                "role": role,
+                "user_id": str(getattr(user, "id"))
             }), 200)
 
             response.set_cookie(
@@ -246,3 +261,10 @@ class LoginResource(Resource):
         return {
             "message": "email and password combination incorrect"
         }, 401
+
+
+class LogoutResource(Resource):
+    def post(self):
+        response = make_response(jsonify({"message": "Logged out successfully"}), 200)
+        response.set_cookie(key="token", value="", expires=0, path="/")
+        return response

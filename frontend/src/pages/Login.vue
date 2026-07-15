@@ -26,14 +26,19 @@ const loginUser = (event) => {
   }).then(async (response) => {
     const jsonResponse = await response.json();
     if (response.ok) {
+      localStorage.setItem("user_id", jsonResponse.user_id);
       router.push(`/${jsonResponse.role}`);
     } else {
-      if (typeof jsonResponse.message == "string") {
-        router.push(`/Error/${response.status}/${jsonResponse.message}`);
-      }
-      if (typeof jsonResponse.message == "object") {
-        const errorMessage = String(Object.values(jsonResponse.message)[0]);
-        router.push(`/Error/${response.status}/${errorMessage}`);
+      if (response.status === 403 && (jsonResponse.message === "pending" || jsonResponse.message === "blacklisted")) {
+        router.push(`/${jsonResponse.message}`);
+      } else {
+        if (typeof jsonResponse.message == "string") {
+          router.push(`/Error/${response.status}/${jsonResponse.message}`);
+        }
+        if (typeof jsonResponse.message == "object") {
+          const errorMessage = String(Object.values(jsonResponse.message)[0]);
+          router.push(`/Error/${response.status}/${errorMessage}`);
+        }
       }
     }
   });
